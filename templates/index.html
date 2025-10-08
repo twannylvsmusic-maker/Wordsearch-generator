@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search Puzzle Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-puzzle-piece"></i>
+                    <h1>Word Search Generator</h1>
+                </div>
+                <div class="header-tagline">
+                    <p>Create beautiful, customizable word search puzzles with shapes and themes.</p>
+                </div>
+                <div class="header-controls">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="font-size-toggle" id="fontSizeToggle">
+                        <i class="fas fa-text-height"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="section">
+                    <div class="section-header">
+                        <i class="fas fa-edit"></i>
+                        <h3>Puzzle Details</h3>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Title/Theme</label>
+                        <input type="text" id="title" placeholder="Enter puzzle title...">
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Sub Header/Topic</label>
+                        <input type="text" id="subject" placeholder="Enter topic or subject...">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <i class="fas fa-list"></i>
+                        <h3>Word List</h3>
+                    </div>
+                    <div class="word-controls">
+                        <button type="button" id="addWordBtn" class="btn-secondary">
+                            <i class="fas fa-plus"></i> Add Word
+                        </button>
+                        <button type="button" id="pasteWordsBtn" class="btn-secondary">
+                            <i class="fas fa-paste"></i> Paste Words
+                        </button>
+                        <button type="button" id="uploadBtn" class="btn-secondary">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                        <button type="button" id="randomizeBtn" class="btn-secondary" title="Randomize word order">
+                            <i class="fas fa-random"></i> Randomize
+                        </button>
+                    </div>
+                    <div class="word-list-container">
+                        <div id="wordList" class="word-list">
+                            <div class="empty-state">
+                                <i class="fas fa-list-ul"></i>
+                                <p>No words added yet</p>
+                            </div>
+                        </div>
+                        <div class="word-count">
+                            <span id="wordCount">0 words</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <i class="fas fa-puzzle-piece"></i>
+                        <h3>Shape & Style</h3>
+                    </div>
+                    
+                    <!-- Shape Selection Tabs -->
+                    <div class="shape-tabs">
+                        <button class="tab-btn active" data-tab="premade">Premade</button>
+                        <button class="tab-btn" data-tab="draw">Draw</button>
+                        <button class="tab-btn" data-tab="upload">Upload</button>
+                    </div>
+
+                    <!-- Premade Shapes Tab -->
+                    <div class="tab-content active" id="premadeTab">
+                        <div class="form-group">
+                            <label for="shapeSelect">Select Shape</label>
+                            <select id="shapeSelect" class="shape-select">
+                                <optgroup label="Basic Shapes">
+                                    <option value="square">Square</option>
+                                    <option value="circle">Circle</option>
+                                    <option value="diamond">Diamond</option>
+                                    <option value="triangle">Triangle</option>
+                                    <option value="hexagon">Hexagon</option>
+                                </optgroup>
+                                <optgroup label="Fun Shapes">
+                                    <option value="heart">Heart</option>
+                                    <option value="star">Star</option>
+                                    <option value="butterfly">Butterfly</option>
+                                    <option value="flower">Flower</option>
+                                </optgroup>
+                                <optgroup label="Animals">
+                                    <option value="dog">Dog</option>
+                                    <option value="cat">Cat</option>
+                                    <option value="fish">Fish</option>
+                                </optgroup>
+                                <optgroup label="Objects">
+                                    <option value="tree">Tree</option>
+                                    <option value="house">House</option>
+                                    <option value="car">Car</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="shape-preview">
+                            <div id="shapePreview" class="preview-shape">
+                                <i class="fas fa-square"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Draw Shape Tab -->
+                    <div class="tab-content" id="drawTab">
+                        <div class="draw-canvas-container">
+                            <canvas id="drawCanvas" width="200" height="200"></canvas>
+                            <div class="canvas-controls">
+                                <button type="button" id="clearCanvas" class="btn-secondary">
+                                    <i class="fas fa-eraser"></i> Clear
+                                </button>
+                                <button type="button" id="saveDrawing" class="btn-primary">
+                                    <i class="fas fa-save"></i> Save Shape
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Shape Tab -->
+                    <div class="tab-content" id="uploadTab">
+                        <div class="upload-area">
+                            <input type="file" id="shapeUpload" accept="image/*" style="display: none;">
+                            <div class="upload-prompt">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Upload an image to use as a shape</p>
+                                <button type="button" id="uploadShapeBtn" class="btn-secondary">
+                                    Choose File
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Font and Theme Customization -->
+                    <div class="form-group">
+                        <label for="fontSelect">Font</label>
+                        <select id="fontSelect" class="font-select">
+                            <option value="Inter">Inter (Modern)</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Comic Sans MS">Comic Sans MS</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Courier New">Courier New</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="themeSelect">Theme</label>
+                        <select id="themeSelect" class="theme-select">
+                            <option value="modern">Modern</option>
+                            <option value="cozy">Cozy</option>
+                            <option value="playful">Playful</option>
+                        </select>
+                    </div>
+
+                    <!-- Word Direction Options -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="allowVertical" checked>
+                            <span class="checkmark"></span>
+                            Allow Vertical Words
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="allowHorizontal" checked>
+                            <span class="checkmark"></span>
+                            Allow Horizontal Words
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="allowDiagonal" checked>
+                            <span class="checkmark"></span>
+                            Allow Diagonal Words
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Preview Section -->
+            <div class="preview-section">
+                <div class="preview-header">
+                    <h3><i class="fas fa-eye"></i> Live Preview</h3>
+                    <button type="button" id="refreshPreview" class="btn-secondary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                
+                <div class="preview-controls">
+                    <select id="exportFormat" class="export-format-select">
+                        <option value="word">Word Document</option>
+                        <option value="pdf">PDF Document</option>
+                    </select>
+                    <button type="button" id="generatePuzzle" class="btn-primary">
+                        <i class="fas fa-download"></i> Generate Puzzle
+                    </button>
+                </div>
+
+                <div class="preview-container">
+                    <div id="puzzlePreview" class="puzzle-preview">
+                        <div class="preview-placeholder">
+                            <i class="fas fa-puzzle-piece"></i>
+                            <p>Add words and select a shape to see preview</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="words-to-find">
+                    <h4>Words to Find</h4>
+                    <div id="wordsToFind" class="words-list">
+                        <p class="empty-message">Words will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden form for puzzle generation -->
+    <form id="puzzleForm" method="POST" style="display: none;">
+        <input type="hidden" name="title" id="formTitle">
+        <input type="hidden" name="subject" id="formSubject">
+        <input type="hidden" name="words" id="formWords">
+        <input type="hidden" name="shape" id="formShape">
+        <input type="hidden" name="font" id="formFont">
+        <input type="hidden" name="theme" id="formTheme">
+        <input type="hidden" name="exportFormat" id="formExportFormat">
+        <input type="hidden" name="allowVertical" id="formAllowVertical">
+        <input type="hidden" name="allowHorizontal" id="formAllowHorizontal">
+        <input type="hidden" name="allowDiagonal" id="formAllowDiagonal">
+    </form>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Word Input Modal -->
+    <div id="wordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Word</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="newWord" placeholder="Enter word...">
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="cancelWord" class="btn-secondary">Cancel</button>
+                <button type="button" id="addWord" class="btn-primary">Add Word</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paste Words Modal -->
+    <div id="pasteModal" class="modal">
+        <div class="modal-content paste-modal-content">
+            <div class="modal-header">
+                <h3>Paste Words</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="paste-instructions">
+                    Paste your words below. You can paste from:
+                    <br>• Text files (one word per line)
+                    <br>• Spreadsheets (words separated by tabs or commas)
+                    <br>• Any text with words separated by spaces, commas, or line breaks
+                </p>
+                <textarea id="pasteWords" placeholder="Paste your words here...&#10;&#10;Example:&#10;APPLE&#10;BANANA&#10;CHERRY&#10;&#10;Or: APPLE, BANANA, CHERRY&#10;&#10;Or: APPLE BANANA CHERRY"></textarea>
+                <div class="paste-preview">
+                    <h4>Preview (<span id="pasteCount">0</span> words):</h4>
+                    <div id="pastePreview" class="paste-preview-list"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="cancelPaste" class="btn-secondary">Cancel</button>
+                <button type="button" id="addPastedWords" class="btn-primary" disabled>Add Words</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

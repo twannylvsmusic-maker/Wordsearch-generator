@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search Generator - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .demo-content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .features {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        .features h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .demo-preview {
+            text-align: center;
+        }
+
+        .demo-preview h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .puzzle-demo {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: inline-block;
+        }
+
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            margin: 20px 0;
+        }
+
+        .puzzle-cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background: #f8f9fa;
+        }
+
+        .word-list {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .word-list h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .word-item {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .cta-section {
+            background: #f8f9fa;
+            padding: 40px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .demo-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Word Search Generator</h1>
+            <p>Create beautiful, customizable word search puzzles with ease</p>
+        </div>
+
+        <div class="demo-content">
+            <div class="features">
+                <h2>✨ Features</h2>
+                <ul class="feature-list">
+                    <li>Multiple shape options (Square, Circle, Heart, Star, etc.)</li>
+                    <li>Custom fonts and themes</li>
+                    <li>Real-time preview</li>
+                    <li>PDF and Word export</li>
+                    <li>Animal and object shapes</li>
+                    <li>Responsive design</li>
+                    <li>Dark/light theme toggle</li>
+                    <li>Custom word directions</li>
+                </ul>
+            </div>
+
+            <div class="demo-preview">
+                <h2>Live Preview</h2>
+                <div class="puzzle-demo">
+                    <h3>Sample Puzzle</h3>
+                    <div class="puzzle-grid">
+                        <div class="puzzle-cell">W</div>
+                        <div class="puzzle-cell">O</div>
+                        <div class="puzzle-cell">R</div>
+                        <div class="puzzle-cell">D</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">A</div>
+                        <div class="puzzle-cell">R</div>
+                        <div class="puzzle-cell">C</div>
+                        <div class="puzzle-cell">H</div>
+                        <div class="puzzle-cell">G</div>
+                        <div class="puzzle-cell">A</div>
+                        <div class="puzzle-cell">M</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">F</div>
+                        <div class="puzzle-cell">U</div>
+                        <div class="puzzle-cell">N</div>
+                        <div class="puzzle-cell">P</div>
+                        <div class="puzzle-cell">U</div>
+                        <div class="puzzle-cell">Z</div>
+                        <div class="puzzle-cell">Z</div>
+                        <div class="puzzle-cell">L</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">O</div>
+                        <div class="puzzle-cell">L</div>
+                        <div class="puzzle-cell">V</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">R</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">T</div>
+                        <div class="puzzle-cell">A</div>
+                        <div class="puzzle-cell">R</div>
+                        <div class="puzzle-cell">T</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">H</div>
+                        <div class="puzzle-cell">A</div>
+                        <div class="puzzle-cell">P</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">C</div>
+                        <div class="puzzle-cell">I</div>
+                        <div class="puzzle-cell">R</div>
+                        <div class="puzzle-cell">C</div>
+                        <div class="puzzle-cell">L</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">H</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">A</div>
+                        <div class="puzzle-cell">R</div>
+                        <div class="puzzle-cell">T</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">D</div>
+                        <div class="puzzle-cell">I</div>
+                        <div class="puzzle-cell">A</div>
+                        <div class="puzzle-cell">M</div>
+                        <div class="puzzle-cell">O</div>
+                        <div class="puzzle-cell">N</div>
+                        <div class="puzzle-cell">D</div>
+                        <div class="puzzle-cell">S</div>
+                        <div class="puzzle-cell">T</div>
+                        <div class="puzzle-cell">R</div>
+                        <div class="puzzle-cell">I</div>
+                        <div class="puzzle-cell">A</div>
+                        <div class="puzzle-cell">N</div>
+                        <div class="puzzle-cell">G</div>
+                        <div class="puzzle-cell">L</div>
+                        <div class="puzzle-cell">E</div>
+                        <div class="puzzle-cell">S</div>
+                    </div>
+                    <div class="word-list">
+                        <h3>Words to Find:</h3>
+                        <span class="word-item">WORDSEARCH</span>
+                        <span class="word-item">GAMES</span>
+                        <span class="word-item">FUN</span>
+                        <span class="word-item">PUZZLES</span>
+                        <span class="word-item">SOLVER</span>
+                        <span class="word-item">STAR</span>
+                        <span class="word-item">SHAPES</span>
+                        <span class="word-item">CIRCLES</span>
+                        <span class="word-item">HEART</span>
+                        <span class="word-item">DIAMOND</span>
+                        <span class="word-item">TRIANGLE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Ready to Create Your Own Puzzles?</h2>
+            <p>Try the full application with all features including PDF/Word export, custom shapes, and real-time preview!</p>
+            <div class="cta-buttons">
+                <a href="https://wordsearch-generator-demo.herokuapp.com" class="btn btn-primary" target="_blank">
+                    🚀 Try Live Demo
+                </a>
+                <a href="https://github.com/yourusername/wordsearch-generator" class="btn btn-outline" target="_blank">
+                    📁 View Source Code
+                </a>
+                <a href="mailto:your.email@example.com" class="btn btn-secondary">
+                    💬 Contact Me
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
