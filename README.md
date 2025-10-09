@@ -24,7 +24,7 @@ A modern, feature-rich word search puzzle generator built with Flask, featuring 
 
 ## 🚀 Live Demo
 
-**Try the application:** [Live Demo](https://wordsearch-generator-demo.herokuapp.com)
+**Try the application:** [Live Demo](https://heroku-create-wordsearch-demo-209b734ec5ec.herokuapp.com/)
 
 ## ✨ Features
 
