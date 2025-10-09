@@ -44,11 +44,11 @@ def export_to_word(title, subject, grid, word_list, font_name, filename, theme='
             section.left_margin = Inches(0.5)   # 0.5" left margin
             section.right_margin = Inches(0.75)  # 0.75" right margin
         else:
-            # Non-square shapes: maintain current spacing
+            # Non-square shapes: equal margins for maximum wordlist space
             section.top_margin = Inches(0.3)   # Minimal margins for better space utilization
             section.bottom_margin = Inches(0.3)
-            section.left_margin = Inches(0.3)
-            section.right_margin = Inches(0.3)
+            section.left_margin = Inches(0.3)  # Equal left margin
+            section.right_margin = Inches(0.3)  # Equal right margin (same as left)
     
     # Set document background to white by setting paragraph styles
     doc.styles['Normal'].font.color.rgb = RGBColor.from_string('000000')  # Black text
@@ -61,48 +61,70 @@ def export_to_word(title, subject, grid, word_list, font_name, filename, theme='
     spacer_paragraph = doc.add_paragraph()
     spacer_paragraph.paragraph_format.space_after = Pt(12)  # Space between title and grid
     
-    # Create main table with puzzle and word list side by side
-    main_table = doc.add_table(rows=1, cols=2)
-    main_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    
-    # Set column widths - optimized for maximum puzzle size
-    left_cell = main_table.cell(0, 0)
-    right_cell = main_table.cell(0, 1)
+    # Create main table with wordlist, spacer, and puzzle
+    if shape == 'square':
+        # Square shapes: 3 columns (wordlist, spacer, puzzle) for double spacing
+        main_table = doc.add_table(rows=1, cols=3)
+        main_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        left_cell = main_table.cell(0, 0)    # Wordlist
+        spacer_cell = main_table.cell(0, 1)  # Spacer
+        right_cell = main_table.cell(0, 2)   # Puzzle
+    else:
+        # Non-square shapes: 3 columns (wordlist, spacer, puzzle) for proper spacing
+        main_table = doc.add_table(rows=1, cols=3)
+        main_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        left_cell = main_table.cell(0, 0)    # Wordlist
+        spacer_cell = main_table.cell(0, 1)  # Spacer
+        right_cell = main_table.cell(0, 2)   # Puzzle
     
     if shape == 'square':
-        # Square shape: minimize wordlist width, maximize puzzle width
-        left_cell.width = Inches(2.5)   # Reduced wordlist width for more puzzle space
-        right_cell.width = Inches(2.75)  # Increased puzzle width
+        # Square shape: with double spacing between columns
+        left_cell.width = Inches(2.5)   # Wordlist width for square shapes
+        spacer_cell.width = Inches(0.4)  # Double spacing for square shapes (2x larger)
+        right_cell.width = Inches(2.35)  # Puzzle width for square shapes (reduced to accommodate spacer)
     else:
-        # Non-square shapes: similar optimization
-        left_cell.width = Inches(2.2)   # Reduced wordlist width
-        right_cell.width = Inches(3.6)  # Increased puzzle width
+        # Non-square shapes: massive wordlist width with minimal spacing
+        left_cell.width = Inches(5.1)   # Massive wordlist width for elderly users
+        spacer_cell.width = Inches(0.15)  # Minimal spacer for visual separation
+        right_cell.width = Inches(0.65)  # Adequate puzzle column space
     
-    # Set table background to white
+    # Set table background to white and reduce padding
     for row in main_table.rows:
         for cell in row.cells:
             set_cell_background(cell, 'ffffff')
+            # Reduce cell padding to maximize usable space
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+            # Set minimal margins for cell content
+            cell._tc.get_or_add_tcPr().append(OxmlElement('w:tcMar'))
+            for margin_type in ['top', 'bottom', 'left', 'right']:
+                margin = OxmlElement(f'w:{margin_type}')
+                margin.set(qn('w:w'), '0')
+                margin.set(qn('w:type'), 'dxa')
+                cell._tc.get_or_add_tcPr().find(qn('w:tcMar')).append(margin)
+    
+    # Clear the spacer cell content
+    spacer_cell.text = ''  # Empty spacer cell
     
     # Add puzzle to right cell (no titles - they're now on the page)
     add_puzzle_to_cell(right_cell, grid, font_name, theme_colors, shape)
     
     # Add word list to left cell (without header since it's now at the top)
-    add_word_list_to_cell_without_header(left_cell, word_list, font_name, theme_colors)
+    add_word_list_to_cell_without_header(left_cell, word_list, font_name, theme_colors, shape)
     
     # Add conditional spacing after main content
     spacer_paragraph2 = doc.add_paragraph()
     if shape == 'square':
         spacer_paragraph2.paragraph_format.space_after = Pt(3)  # Minimal spacing for square
     else:
-        spacer_paragraph2.paragraph_format.space_after = Pt(8)  # More spacing for non-square
+        spacer_paragraph2.paragraph_format.space_after = Pt(2)  # Minimal spacing for non-square to fit one page
     
     # Conditional instructions placement based on shape
     if shape == 'square':
         # For square shapes: instructions go in footer (left aligned)
         add_instructions_to_footer(doc, font_name, theme_colors)
     else:
-        # For non-square shapes: instructions below puzzle (centered)
-        add_constrained_instructions(doc, font_name, theme_colors, Inches(2.0))  # Match puzzle width
+        # For non-square shapes: instructions go in footer (same as PDF format)
+        add_instructions_to_footer_for_non_square(doc, font_name, theme_colors)
     
     # Save document
     normalized_path = os.path.abspath(filename)
@@ -242,14 +264,17 @@ def add_word_list_to_cell(cell, word_list, font_name, theme_colors):
         # Minimal spacing between words
         word_paragraph.paragraph_format.space_after = Pt(2)
 
-def add_word_list_to_cell_without_header(cell, word_list, font_name, theme_colors):
+def add_word_list_to_cell_without_header(cell, word_list, font_name, theme_colors, shape='square'):
     """Add word list to the specified cell with header aligned to puzzle grid top."""
     
     # Add "Wordlist:" header aligned with puzzle grid top
     header_paragraph = cell.add_paragraph()
     header_run = header_paragraph.add_run("Wordlist:")
     header_run.font.name = font_name
-    header_run.font.size = Pt(20)  # Match puzzle letters font size (20pt)
+    if shape == 'square':
+        header_run.font.size = Pt(16)  # Square shapes: 16pt (reduced from 20pt)
+    else:
+        header_run.font.size = Pt(16)  # Non-square shapes: 16pt (keep as is)
     header_run.bold = True  # Make wordlist header bold for emphasis
     header_run.font.color.rgb = RGBColor.from_string('000000')  # Black
     header_paragraph.paragraph_format.space_after = Pt(6)  # Reduced space between header and first word
@@ -263,7 +288,7 @@ def add_word_list_to_cell_without_header(cell, word_list, font_name, theme_color
         word_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
         word_run = word_paragraph.add_run(formatted_word)
         word_run.font.name = font_name
-        word_run.font.size = Pt(12)  # Increased word font size to 12pt for better readability
+        word_run.font.size = Pt(12)  # Keep 12pt for readability (elderly-friendly)
         word_run.font.color.rgb = RGBColor.from_string(theme_colors['text'])
         
         # Optimized spacing: minimal between words, no spacing after last word
@@ -280,13 +305,13 @@ def add_puzzle_to_cell(cell, grid, font_name, theme_colors, shape='square'):
     puzzle_table.style = 'Table Grid'
     puzzle_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     
-    # Set conditional cell sizes based on shape - maximized for larger puzzle
+    # Set conditional cell sizes based on shape - optimized for one-page fit
     if shape == 'square':
-        # Larger cells for square shapes to maximize puzzle size
-        cell_size = Inches(0.22)  # Increased from 0.15 to 0.22
+        # Square shapes: larger cells since we have more space
+        cell_size = Inches(0.22)  # 0.22" cells for square shapes
     else:
-        # Larger cells for non-square shapes too
-        cell_size = Inches(0.25)  # Increased from 0.18 to 0.25
+        # Non-square shapes: smaller cells to ensure one-page fit
+        cell_size = Inches(0.18)  # 0.18" cells for non-square shapes
     
     for row in puzzle_table.rows:
         row.height = cell_size
@@ -307,7 +332,10 @@ def add_puzzle_to_cell(cell, grid, font_name, theme_colors, shape='square'):
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 for run in paragraph.runs:
                     run.font.name = font_name
-                    run.font.size = Pt(20)  # Increased puzzle letters to 20pt for better visibility
+                    if shape == 'square':
+                        run.font.size = Pt(20)  # Square shapes: 20pt puzzle letters (original)
+                    else:
+                        run.font.size = Pt(12)  # Non-square shapes: 12pt puzzle letters
                     run.bold = False  # Make puzzle letters not bold
                     run.font.color.rgb = RGBColor.from_string(theme_colors['text'])
 
@@ -342,6 +370,45 @@ def add_instructions_to_footer(doc, font_name, theme_colors):
         instruction_run.font.size = Pt(11)
         instruction_run.font.color.rgb = RGBColor.from_string('000000')  # Black
 
+def add_instructions_to_footer_for_non_square(doc, font_name, theme_colors):
+    """Add instructions to the footer for non-square shapes, matching PDF format."""
+    
+    # Get the footer
+    footer = doc.sections[0].footer
+    
+    # Add instructions title
+    title_paragraph = footer.add_paragraph()
+    title_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    title_run = title_paragraph.add_run("Instructions:")
+    title_run.font.name = font_name
+    title_run.font.size = Pt(11)
+    title_run.bold = True
+    title_run.font.color.rgb = RGBColor.from_string('000000')  # Black
+    
+    # Add instruction text with bold "Note:" (matching PDF format)
+    instruction_paragraph = footer.add_paragraph()
+    instruction_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    instruction_paragraph.paragraph_format.space_after = Pt(0)
+    
+    # Add main instruction text
+    main_run = instruction_paragraph.add_run("Find all the words hidden in the puzzle above, circle or highlight each word as you find it. ")
+    main_run.font.name = font_name
+    main_run.font.size = Pt(11)
+    main_run.font.color.rgb = RGBColor.from_string('000000')  # Black
+    
+    # Add "Note:" in bold
+    note_bold_run = instruction_paragraph.add_run("Note: ")
+    note_bold_run.font.name = font_name
+    note_bold_run.font.size = Pt(11)
+    note_bold_run.bold = True
+    note_bold_run.font.color.rgb = RGBColor.from_string('000000')  # Black
+    
+    # Add rest of note text
+    note_text_run = instruction_paragraph.add_run("Words may be read horizontally, vertically, or diagonally.")
+    note_text_run.font.name = font_name
+    note_text_run.font.size = Pt(11)
+    note_text_run.font.color.rgb = RGBColor.from_string('000000')  # Black
+
 def add_constrained_instructions(doc, font_name, theme_colors, max_width):
     """Add instructions constrained to a specific width, formatted like the image."""
     
@@ -365,20 +432,30 @@ def add_constrained_instructions(doc, font_name, theme_colors, max_width):
     title_run.bold = True
     title_run.font.color.rgb = RGBColor.from_string('000000')  # Black
     
-    # Add instruction lines (left-aligned, matching image format)
-    instructions = [
-        "Find all the words hidden in the puzzle above.",
-        "Circle or highlight each word as you find it.",
-        "Words can be read horizontally, vertically, or diagonally."
-    ]
+    # Add single line instruction with bold "Note:"
+    instruction_paragraph = instructions_cell.add_paragraph()
+    instruction_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    instruction_paragraph.paragraph_format.space_after = Pt(0)
     
-    for instruction in instructions:
-        instruction_paragraph = instructions_cell.add_paragraph()
-        instruction_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        instruction_run = instruction_paragraph.add_run(instruction)
-        instruction_run.font.name = font_name
-        instruction_run.font.size = Pt(11)
-        instruction_run.font.color.rgb = RGBColor.from_string('000000')  # Black
+    # Add main instruction text
+    main_run = instruction_paragraph.add_run("Find all the words hidden in the puzzle above, circle or highlight each word as you find it. ")
+    main_run.font.name = font_name
+    main_run.font.size = Pt(11)
+    main_run.font.color.rgb = RGBColor.from_string('000000')  # Black
+    
+    # Add "Note: " in bold
+    note_bold_run = instruction_paragraph.add_run("Note: ")
+    note_bold_run.font.name = font_name
+    note_bold_run.font.size = Pt(11)
+    note_bold_run.bold = True
+    note_bold_run.font.color.rgb = RGBColor.from_string('000000')  # Black
+    
+    # Add the rest of the note in regular font
+    note_text_run = instruction_paragraph.add_run("Words may be read horizontally, vertically, or diagonally.")
+    note_text_run.font.name = font_name
+    note_text_run.font.size = Pt(11)
+    note_text_run.bold = False
+    note_text_run.font.color.rgb = RGBColor.from_string('000000')  # Black
 
 def get_theme_colors(theme):
     """Get color scheme for the specified theme."""

@@ -6,7 +6,10 @@ from .shape_masks import get_shape_mask
 # This version includes improved word placement algorithms specifically for non-square shapes
 # to include more words in the puzzle while maintaining the same formatting and layout.
 # 
-# To revert to original algorithm, run: python revert_puzzle_generator.py
+# To revert to original algorithm:
+# 1. Replace the enhanced placement loop (lines 62-75) with the original single loop
+# 2. Remove the place_word_enhanced, can_place_word_with_overlap, and can_place_word_tight functions
+# 3. Square shapes are unaffected by these changes
 
 def generate_puzzle(words, shape='square', size=None, allow_vertical=True, allow_horizontal=True, allow_diagonal=True):
     """

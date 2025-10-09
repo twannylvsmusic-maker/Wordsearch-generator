@@ -2,11 +2,6 @@ import random
 import string
 from .shape_masks import get_shape_mask
 
-# ENHANCED WORD PLACEMENT FOR NON-SQUARE SHAPES
-# This version includes improved word placement algorithms specifically for non-square shapes
-# to include more words in the puzzle while maintaining the same formatting and layout.
-# 
-# To revert to original algorithm, run: python revert_puzzle_generator.py
 
 def generate_puzzle(words, shape='square', size=None, allow_vertical=True, allow_horizontal=True, allow_diagonal=True):
     """
@@ -50,35 +45,19 @@ def generate_puzzle(words, shape='square', size=None, allow_vertical=True, allow
     
     placed_words = []
     
-    # Try to place each word, with enhanced algorithm for non-square shapes
-    if shape == 'square':
-        # Original algorithm for square shapes (unchanged)
-        for word in words:
-            # Try up to 10 times to place difficult words (increased from 3)
-            placed = False
-            for attempt in range(10):
-                if place_word(grid, mask, word, allow_vertical, allow_horizontal, allow_diagonal):
-                    placed_words.append(word)
-                    placed = True
-                    break
-            
-            # If word still couldn't be placed after 10 attempts, continue to next word
-            if not placed:
-                print(f"Warning: Could not place word '{word}' after 10 attempts")
-    else:
-        # Enhanced algorithm for non-square shapes
-        for word in words:
-            placed = False
-            # Try more attempts for non-square shapes (15 attempts)
-            for attempt in range(15):
-                if place_word_enhanced(grid, mask, word, allow_vertical, allow_horizontal, allow_diagonal):
-                    placed_words.append(word)
-                    placed = True
-                    break
-            
-            # If word still couldn't be placed after 15 attempts, continue to next word
-            if not placed:
-                print(f"Warning: Could not place word '{word}' after 15 attempts")
+    # Try to place each word, with multiple attempts
+    for word in words:
+        # Try up to 10 times to place difficult words (increased from 3)
+        placed = False
+        for attempt in range(10):
+            if place_word(grid, mask, word, allow_vertical, allow_horizontal, allow_diagonal):
+                placed_words.append(word)
+                placed = True
+                break
+        
+        # If word still couldn't be placed after 10 attempts, continue to next word
+        if not placed:
+            print(f"Warning: Could not place word '{word}' after 10 attempts")
     
     # Fill empty spaces with random letters
     for i in range(grid_size):
@@ -127,110 +106,6 @@ def place_word(grid, mask, word, allow_vertical=True, allow_horizontal=True, all
     
     return False
 
-def place_word_enhanced(grid, mask, word, allow_vertical=True, allow_horizontal=True, allow_diagonal=True):
-    """
-    Enhanced word placement algorithm specifically for non-square shapes.
-    Uses more aggressive placement strategies to fit more words.
-    
-    Returns:
-        bool: True if word was placed successfully
-    """
-    
-    directions = []
-    if allow_horizontal:
-        directions.extend([(0, 1), (0, -1)])  # Left-right, Right-left
-    if allow_vertical:
-        directions.extend([(1, 0), (-1, 0)])  # Top-bottom, Bottom-top
-    if allow_diagonal:
-        directions.extend([(1, 1), (1, -1), (-1, 1), (-1, -1)])  # Diagonals
-    
-    # Get all valid positions
-    positions = [(i, j) for i in range(len(grid)) for j in range(len(grid[0])) if mask[i][j]]
-    
-    # For non-square shapes, prioritize center positions first (more likely to fit)
-    center_i, center_j = len(grid) // 2, len(grid[0]) // 2
-    positions.sort(key=lambda pos: abs(pos[0] - center_i) + abs(pos[1] - center_j))
-    
-    # Try more positions for non-square shapes (up to 300 instead of 200)
-    max_positions = min(len(positions), 300)
-    
-    # Strategy 1: Try all directions at each position
-    for start_i, start_j in positions[:max_positions]:
-        for di, dj in directions:
-            if can_place_word(grid, mask, word, start_i, start_j, di, dj):
-                place_word_at(grid, word, start_i, start_j, di, dj)
-                return True
-    
-    # Strategy 2: If normal placement fails, try with partial overlap
-    # (allow words to share some letters if they match)
-    for start_i, start_j in positions[:max_positions]:
-        for di, dj in directions:
-            if can_place_word_with_overlap(grid, mask, word, start_i, start_j, di, dj):
-                place_word_at(grid, word, start_i, start_j, di, dj)
-                return True
-    
-    # Strategy 3: Try different word orientations more aggressively
-    # (try shorter words in tighter spaces)
-    if len(word) <= 6:  # Only for shorter words to avoid conflicts
-        for start_i, start_j in positions[:max_positions]:
-            for di, dj in directions:
-                if can_place_word_tight(grid, mask, word, start_i, start_j, di, dj):
-                    place_word_at(grid, word, start_i, start_j, di, dj)
-                    return True
-    
-    return False
-
-def can_place_word_with_overlap(grid, mask, word, start_i, start_j, di, dj):
-    """
-    Check if a word can be placed with some overlap (allowing shared letters).
-    More lenient than the standard placement.
-    """
-    conflicts = 0
-    for k, letter in enumerate(word):
-        i = start_i + k * di
-        j = start_j + k * dj
-        
-        # Check bounds
-        if i < 0 or i >= len(grid) or j < 0 or j >= len(grid[0]):
-            return False
-        
-        # Check if position is allowed by mask
-        if not mask[i][j]:
-            return False
-        
-        # Allow one conflicting letter for shorter words
-        if grid[i][j] and grid[i][j] != letter:
-            conflicts += 1
-            if conflicts > 1 or len(word) > 7:  # Only allow 1 conflict for words <= 7 letters
-                return False
-    
-    return True
-
-def can_place_word_tight(grid, mask, word, start_i, start_j, di, dj):
-    """
-    Check if a word can be placed in tight spaces (for shorter words).
-    More aggressive placement for words <= 6 letters.
-    """
-    for k, letter in enumerate(word):
-        i = start_i + k * di
-        j = start_j + k * dj
-        
-        # Check bounds
-        if i < 0 or i >= len(grid) or j < 0 or j >= len(grid[0]):
-            return False
-        
-        # Check if position is allowed by mask
-        if not mask[i][j]:
-            return False
-        
-        # For tight placement, only allow conflicts if the existing letter is common
-        if grid[i][j] and grid[i][j] != letter:
-            # Allow conflict with common letters (A, E, I, O, U, R, S, T, N, L)
-            common_letters = {'A', 'E', 'I', 'O', 'U', 'R', 'S', 'T', 'N', 'L'}
-            if grid[i][j] not in common_letters or letter not in common_letters:
-                return False
-    
-    return True
 
 def can_place_word(grid, mask, word, start_i, start_j, di, dj):
     """

@@ -39,11 +39,21 @@
                     </div>
                     <div class="form-group">
                         <label for="title">Title/Theme</label>
-                        <input type="text" id="title" placeholder="Enter puzzle title...">
+                        <div class="input-with-clear">
+                            <input type="text" id="title" placeholder="Enter puzzle title..." autocomplete="off">
+                            <button type="button" class="btn-clear-input" onclick="clearTitle()" title="Clear title">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="subject">Sub Header/Topic</label>
-                        <input type="text" id="subject" placeholder="Enter topic or subject...">
+                        <div class="input-with-clear">
+                            <input type="text" id="subject" placeholder="Enter topic or subject..." autocomplete="off">
+                            <button type="button" class="btn-clear-input" onclick="clearSubject()" title="Clear subject">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -90,6 +100,7 @@
                         <button class="tab-btn active" data-tab="premade">Premade</button>
                         <button class="tab-btn" data-tab="draw">Draw</button>
                         <button class="tab-btn" data-tab="upload">Upload</button>
+                        <button class="tab-btn" data-tab="manage">Manage</button>
                     </div>
 
                     <!-- Premade Shapes Tab -->
@@ -132,7 +143,21 @@
                     <!-- Draw Shape Tab -->
                     <div class="tab-content" id="drawTab">
                         <div class="draw-canvas-container">
+                            <div class="drawing-instructions">
+                                <p><i class="fas fa-info-circle"></i> Draw the outline/border of your custom shape below. The area inside your drawing will be filled with letters for the puzzle.</p>
+                            </div>
                             <canvas id="drawCanvas" width="200" height="200"></canvas>
+                            <div class="drawing-controls">
+                                <div class="brush-controls">
+                                    <label for="brushSize">Brush Size:</label>
+                                    <input type="range" id="brushSize" min="1" max="10" value="3">
+                                    <span id="brushSizeValue">3</span>
+                                </div>
+                                <div class="color-controls">
+                                    <label for="brushColor">Color:</label>
+                                    <input type="color" id="brushColor" value="#667eea">
+                                </div>
+                            </div>
                             <div class="canvas-controls">
                                 <button type="button" id="clearCanvas" class="btn-secondary">
                                     <i class="fas fa-eraser"></i> Clear
@@ -153,6 +178,31 @@
                                 <p>Upload an image to use as a shape</p>
                                 <button type="button" id="uploadShapeBtn" class="btn-secondary">
                                     Choose File
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manage Custom Shapes Tab -->
+                    <div class="tab-content" id="manageTab">
+                        <div class="manage-shapes-container">
+                            <div class="manage-header">
+                                <h4><i class="fas fa-cog"></i> Manage Custom Shapes</h4>
+                                <button type="button" id="refreshCustomShapes" class="btn-secondary">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="custom-shapes-list">
+                                <div id="customShapesList" class="shapes-list">
+                                    <div class="loading-shapes">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        <p>Loading custom shapes...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="manage-actions">
+                                <button type="button" id="clearAllCustomShapes" class="btn-danger" disabled>
+                                    <i class="fas fa-trash"></i> Clear All Custom Shapes
                                 </button>
                             </div>
                         </div>

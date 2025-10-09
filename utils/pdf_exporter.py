@@ -50,21 +50,21 @@ def export_to_pdf(title, subject, grid, word_list, font_name, filename, theme='m
             bottomMargin=1.5*inch  # 1.5" bottom margin (increased for footer instructions)
         )
     else:
-        # Non-square shapes: minimal margins
+        # Non-square shapes: equal left and right margins like Word version
         doc = SimpleDocTemplate(
             normalized_path,
             pagesize=CUSTOM_PAGE_SIZE,
-            leftMargin=0.3*inch,   # Minimal margins for better space utilization
-            rightMargin=0.3*inch,
-            topMargin=0.3*inch,
-            bottomMargin=0.3*inch
+            leftMargin=0.5*inch,   # Equal left margin
+            rightMargin=0.5*inch,  # Equal right margin (matching left)
+            topMargin=0.5*inch,    # Reduced top margin for more space
+            bottomMargin=1.0*inch  # Increased bottom margin for footer instructions
         )
     
     # Get styles
     styles = getSampleStyleSheet()
     
     # Create puzzle table and word list
-    puzzle_table = create_puzzle_table(grid, font_name, theme_colors)
+    puzzle_table = create_puzzle_table(grid, font_name, theme_colors, shape)
     word_list_table = create_word_list_table(word_list, font_name, theme_colors, shape, grid)
     
     # Create title and subject paragraphs for centering on page
@@ -83,13 +83,20 @@ def export_to_pdf(title, subject, grid, word_list, font_name, filename, theme='m
         title_para = Paragraph(f"<b>{title}</b>", title_style)
     
     if subject:
+        # Conditional spacing based on shape type
+        if shape == 'square':
+            space_before = 0  # No extra spacing for square shapes
+        else:
+            space_before = 12  # Additional spacing above subject/topic for non-square shapes
+            
         subject_style = ParagraphStyle(
             'CustomSubject',
             fontSize=16,  # Set to 16pt as requested
             textColor=colors.black,  # Black color
             fontName=font_name,
             alignment=TA_CENTER,
-            spaceAfter=8
+            spaceAfter=8,
+            spaceBefore=space_before  # Conditional spacing above subject/topic
         )
         subject_para = Paragraph(subject, subject_style)
     
@@ -103,7 +110,10 @@ def export_to_pdf(title, subject, grid, word_list, font_name, filename, theme='m
         cell_size = max_puzzle_width / grid_size  # Dynamic cell size
         puzzle_width = grid_size * cell_size  # Calculate actual puzzle width
     else:
-        puzzle_width = 3.2*inch  # Non-square shapes
+        # Non-square shapes: calculate width to fit properly with word list (equal margins)
+        available_width = 5.5*inch  # 6.5" - 1.0" margins (0.5" left + 0.5" right)
+        wordlist_width = 1.8*inch   # Further reduced word list width for 2X larger puzzle cells
+        puzzle_width = available_width - wordlist_width - 0.2*inch  # 3.5" for puzzle with gap
     
     centered_puzzle_table = Table([[puzzle_table]], colWidths=[puzzle_width])
     centered_puzzle_table.setStyle(TableStyle([
@@ -124,10 +134,13 @@ def export_to_pdf(title, subject, grid, word_list, font_name, filename, theme='m
             [word_list_table, centered_puzzle_table]
         ], colWidths=[wordlist_width, puzzle_width])
     else:
-        # Non-square shapes: original sizing
+        # Non-square shapes: optimized sizing to prevent overlap (equal margins)
+        available_width = 5.5*inch  # 6.5" - 1.0" margins (0.5" left + 0.5" right)
+        wordlist_width = 1.8*inch   # Further reduced word list width for 2X larger puzzle cells
+        puzzle_width = available_width - wordlist_width - 0.2*inch  # 3.5" for puzzle with gap
         main_table = Table([
             [word_list_table, centered_puzzle_table]
-        ], colWidths=[3.0*inch, 3.2*inch])
+        ], colWidths=[wordlist_width, puzzle_width])
     
     # Style the main table - better alignment for grid container
     main_table.setStyle(TableStyle([
@@ -143,8 +156,11 @@ def export_to_pdf(title, subject, grid, word_list, font_name, filename, theme='m
     # Build content
     story = []
     
-    # Add space at the top to push content down (reduced to move title up)
-    story.append(Spacer(1, 20))
+    # Add space at the top to push content down (optimized for page fit)
+    if shape == 'square':
+        story.append(Spacer(1, 20))
+    else:
+        story.append(Spacer(1, 10))  # Less space for non-square shapes
     
     # Add title and subject to page (centered)
     if title_para:
@@ -152,28 +168,37 @@ def export_to_pdf(title, subject, grid, word_list, font_name, filename, theme='m
     if subject_para:
         story.append(subject_para)
     
-    # Add space between title and main content (increased to move title up from grid)
-    story.append(Spacer(1, 40))
+    # Add space between title and main content (optimized for page fit)
+    if shape == 'square':
+        story.append(Spacer(1, 40))
+    else:
+        story.append(Spacer(1, 20))  # Less space for non-square shapes
     
     # Add the main table (word list + puzzle)
     story.append(main_table)
     
-    # Add space after the main content (increased to push instructions down)
-    story.append(Spacer(1, 20))
+    # Add space after the main content (optimized for page fit)
+    if shape == 'square':
+        story.append(Spacer(1, 20))
+    else:
+        story.append(Spacer(1, 10))  # Less space for non-square shapes
     
     # Instructions formatted to match Word document
     if shape != 'square':
-        # For non-square shapes: instructions below puzzle (left-aligned, matching image format)
-        add_constrained_instructions_pdf(story, font_name, theme_colors, 2.0*inch)
+        # For non-square shapes: instructions will be added to footer via canvas
+        pass  # Instructions added via footer canvas function
     
     # Build PDF with white background and footer
     def add_background_and_footer(canvas, doc):
         canvas.setFillColor(colors.white)
         canvas.rect(0, 0, CUSTOM_PAGE_SIZE[0], CUSTOM_PAGE_SIZE[1], fill=1, stroke=0)
         
-        # Add footer instructions for square shapes
+        # Add footer instructions for both shapes
         if shape == 'square':
             add_instructions_to_pdf_footer(canvas, doc, font_name, theme_colors)
+        else:
+            # Add footer instructions for non-square shapes
+            add_instructions_to_pdf_footer_for_non_square(canvas, doc, font_name, theme_colors)
     
     doc.build(story, onFirstPage=add_background_and_footer, onLaterPages=add_background_and_footer)
 
@@ -204,6 +229,108 @@ def add_instructions_to_pdf_footer(canvas, doc, font_name, theme_colors):
         y_position = footer_y - (i + 1) * line_height
         canvas.drawString(left_margin, y_position, instruction)
 
+def add_instructions_to_pdf_footer_for_non_square(canvas, doc, font_name, theme_colors):
+    """Add instructions to the actual PDF footer for non-square shapes with paragraph-like formatting."""
+    
+    # Calculate footer position (bottom margin is 1.0", so start at 1.2" from bottom)
+    footer_y = 1.2 * inch
+    left_margin = 0.5 * inch
+    right_margin = 0.5 * inch
+    available_width = 6.5 * inch - left_margin - right_margin  # Available width for text
+    
+    # Set font and color for "Instructions:" (bold)
+    canvas.setFont(font_name + "-Bold", 11)  # Bold font for "Instructions:"
+    canvas.setFillColor(colors.black)  # Black color
+    
+    # Draw "Instructions:" in bold
+    canvas.drawString(left_margin, footer_y, "Instructions:")
+    
+    # Calculate width of "Instructions:" to position the rest of the text
+    instructions_label_width = canvas.stringWidth("Instructions:", font_name + "-Bold", 11)
+    
+    # Set font for the rest of the text (regular)
+    canvas.setFont(font_name, 11)  # Regular font for instruction text
+    
+    # Instruction text with proper wrapping
+    instruction_text = "Find all the words hidden in the puzzle above, circle or highlight each word as you find it. Note: Words may be read horizontally, vertically, or diagonally."
+    
+    # Split text into lines that fit within margins
+    words = instruction_text.split()
+    lines = []
+    current_line = ""
+    
+    for word in words:
+        test_line = current_line + (" " if current_line else "") + word
+        # Check if "Note:" should be bold
+        if word == "Note:":
+            test_line = current_line + (" " if current_line else "") + word
+            test_width = canvas.stringWidth(current_line + (" " if current_line else ""), font_name, 11)
+            test_width += canvas.stringWidth("Note:", font_name + "-Bold", 11)
+            if test_width > available_width - instructions_label_width - 10:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+            else:
+                current_line = test_line
+        else:
+            test_width = canvas.stringWidth(test_line, font_name, 11)
+            if test_width > available_width - instructions_label_width - 10:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+            else:
+                current_line = test_line
+    
+    if current_line:
+        lines.append(current_line)
+    
+    # Draw the instruction lines with proper bold formatting for "Note:"
+    for i, line in enumerate(lines):
+        y_position = footer_y - (i + 1) * 13  # 13pt line spacing
+        x_position = left_margin
+        
+        # Check if line contains "Note:" and handle bold formatting
+        if "Note:" in line:
+            parts = line.split("Note:")
+            # Draw text before "Note:"
+            if parts[0]:
+                canvas.setFont(font_name, 11)  # Regular font
+                canvas.drawString(x_position, y_position, parts[0])
+                x_position += canvas.stringWidth(parts[0], font_name, 11)
+            
+            # Draw "Note:" in bold
+            canvas.setFont(font_name + "-Bold", 11)  # Bold font
+            canvas.drawString(x_position, y_position, "Note:")
+            x_position += canvas.stringWidth("Note:", font_name + "-Bold", 11)
+            
+            # Draw text after "Note:"
+            if len(parts) > 1 and parts[1]:
+                canvas.setFont(font_name, 11)  # Regular font
+                canvas.drawString(x_position, y_position, parts[1])
+        else:
+            # Regular line without "Note:"
+            canvas.setFont(font_name, 11)  # Regular font
+            canvas.drawString(x_position, y_position, line)
+
+
+def add_instructions_to_pdf_footer_for_custom_shapes(story, font_name, theme_colors):
+    """Add instructions to footer for custom shapes in a single line."""
+    
+    # Single line instructions (matching Word format)
+    instruction_text = "Instructions: Find all the words hidden in the puzzle above. Circle or highlight each word as you find it. Words can be read horizontally, vertically, or diagonally."
+    
+    instruction_style = ParagraphStyle(
+        'InstructionsLine',
+        fontSize=11,  # 11pt for PDF to match Word appearance
+        textColor=colors.black,
+        fontName=font_name,
+        alignment=TA_LEFT,
+        spaceAfter=0
+    )
+    instruction_para = Paragraph(instruction_text, instruction_style)
+    
+    # Add instructions to story
+    story.append(instruction_para)
 
 def add_constrained_instructions_pdf(story, font_name, theme_colors, max_width):
     """Add instructions constrained to a specific width (left-aligned, matching image format)."""
@@ -299,7 +426,7 @@ def create_puzzle_table_with_title(grid, title, subject, font_name, theme_colors
     
     return combined_table
 
-def create_puzzle_table(grid, font_name, theme_colors):
+def create_puzzle_table(grid, font_name, theme_colors, shape='square'):
     """Create the puzzle grid as a table."""
     
     # Create table data
@@ -316,24 +443,32 @@ def create_puzzle_table(grid, font_name, theme_colors):
     if grid_size <= 12:  # 8x8 to 12x12 grids (square shapes)
         # Calculate optimal cell size to fit within max puzzle width
         cell_size = max_puzzle_width / grid_size  # Dynamic sizing based on available space
-    else:  # Larger grids
-        cell_size = 0.45*inch  # Keep larger size for non-square shapes
+        puzzle_font_size = 20  # Original font size for square shapes (unchanged)
+        cell_padding = 2  # Original padding for square shapes (unchanged)
+    else:  # Larger grids (15x15 custom shapes)
+        # Use the same successful approach as square shapes but for 15x15 grids
+        available_width = 5.5*inch  # 6.5" - 1.0" margins (0.5" left + 0.5" right)
+        wordlist_width = 1.8*inch   # Reduced word list width
+        max_puzzle_width = available_width - wordlist_width - 0.2*inch  # 3.5" for puzzle with gap
+        cell_size = max_puzzle_width / grid_size  # Same calculation method as square shapes
+        puzzle_font_size = 17  # Reduced by 1pt for non-square shapes (18pt → 17pt)
+        cell_padding = 2  # Use the same successful padding as square shapes
     
     table = Table(table_data, colWidths=cell_size, rowHeights=cell_size)
     
-    # Style the table with improved alignment
+    # Style the table using the same successful approach as square shapes
     table_style = [
         ('FONTNAME', (0, 0), (-1, -1), font_name),  # Back to original font
-        ('FONTSIZE', (0, 0), (-1, -1), 20),  # Increased font size for better visibility
+        ('FONTSIZE', (0, 0), (-1, -1), puzzle_font_size),  # Conditional font size
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),  # Black color
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Changed to TOP to shift letters up
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),  # Center letters horizontally
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Use same alignment as square shapes
         ('GRID', (0, 0), (-1, -1), 0.5, theme_colors['grid']),
         ('BACKGROUND', (0, 0), (-1, -1), theme_colors['background']),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),  # Keep horizontal padding
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),  # Use same padding as square shapes
         ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),   # No top padding
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10), # Even more bottom padding to push letters up more
+        ('TOPPADDING', (0, 0), (-1, -1), 0),   # Use same padding as square shapes
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 15), # Increased bottom padding to push letters up for better centering
     ]
     
     table.setStyle(TableStyle(table_style))
@@ -352,10 +487,15 @@ def create_word_list_table(word_list, font_name, theme_colors, shape='square', g
     )
     padding = Paragraph("&nbsp;", padding_style)  # Invisible spacer
     
-    # Header
+    # Header - conditional font size
+    if shape == 'square':
+        header_font_size = 20  # Original font size for square shapes
+    else:
+        header_font_size = 16  # Adjusted font size for non-square shapes
+    
     header_style = ParagraphStyle(
         'WordListHeader',
-        fontSize=20,  # Match puzzle letters: 16pt → 20pt
+        fontSize=header_font_size,  # Conditional header font size
         textColor=colors.black,  # Black color
         fontName=font_name,
         spaceAfter=30  # Significantly increased spacing below "Wordlist" header
@@ -382,9 +522,16 @@ def create_word_list_table(word_list, font_name, theme_colors, shape='square', g
     for word in word_list:
         # Capitalize and preserve spaces within words
         formatted_word = word.upper()
+        
+        # Conditional font size for words
+        if shape == 'square':
+            word_font_size = 16  # Original font size for square shapes
+        else:
+            word_font_size = 14  # Adjusted font size for non-square shapes
+        
         word_style = ParagraphStyle(
             'WordItem',
-            fontSize=16,  # Changed to 16pt as requested
+            fontSize=word_font_size,  # Conditional word font size
             textColor=colors.black,  # Black color
             fontName=font_name,
             alignment=TA_LEFT,  # Left align under "Wordlist:" title
@@ -405,8 +552,9 @@ def create_word_list_table(word_list, font_name, theme_colors, shape='square', g
         wordlist_width = available_width - puzzle_width  # Remaining space for wordlist
         table = Table(word_list_data, colWidths=[wordlist_width])
     else:
-        # Non-square shapes: fixed width
-        table = Table(word_list_data, colWidths=[3.0*inch])
+        # Non-square shapes: optimized width to prevent overlap
+        wordlist_width = 1.8*inch  # Further reduced width to accommodate 2X larger puzzle cells
+        table = Table(word_list_data, colWidths=[wordlist_width])
     
     # Style the table
     table_style = [

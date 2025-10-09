@@ -123,5 +123,117 @@ def preview():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/save_drawing', methods=['POST'])
+def save_drawing():
+    """Save a custom drawing as a shape mask."""
+    try:
+        data = request.get_json()
+        canvas_data = data.get('canvas_data')
+        shape_name = data.get('shape_name', 'custom_drawing')
+        
+        if not canvas_data:
+            return jsonify({'error': 'No canvas data provided'}), 400
+        
+        # Process the canvas data into a shape mask
+        from utils.shape_masks import process_canvas_to_mask, add_custom_shape
+        mask = process_canvas_to_mask(canvas_data, 15)  # 15x15 grid
+        
+        # Store the custom shape mask
+        add_custom_shape(shape_name, mask)
+        
+        return jsonify({
+            'success': True,
+            'shape_name': shape_name,
+            'message': 'Drawing saved as custom shape!'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/upload_shape', methods=['POST'])
+def upload_shape():
+    """Process an uploaded image file as a custom shape."""
+    try:
+        if 'shape_file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['shape_file']
+        shape_name = request.form.get('shape_name', 'uploaded_shape')
+        
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Process the uploaded image into a shape mask
+        from utils.shape_masks import process_uploaded_image_to_mask, add_custom_shape
+        mask = process_uploaded_image_to_mask(file, 15)  # 15x15 grid
+        
+        # Store the custom shape mask
+        add_custom_shape(shape_name, mask)
+        
+        return jsonify({
+            'success': True,
+            'shape_name': shape_name,
+            'message': 'Image uploaded and processed as custom shape!'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/custom_shapes', methods=['GET'])
+def get_custom_shapes():
+    """Get list of available custom shapes."""
+    try:
+        from utils.shape_masks import list_custom_shapes
+        shapes = list_custom_shapes()
+        return jsonify({
+            'success': True,
+            'shapes': shapes
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/delete_custom_shape', methods=['POST'])
+def delete_custom_shape():
+    """Delete a specific custom shape."""
+    try:
+        data = request.get_json()
+        shape_name = data.get('shape_name')
+        
+        if not shape_name:
+            return jsonify({'error': 'Shape name is required'}), 400
+        
+        from utils.shape_masks import delete_custom_shape
+        success = delete_custom_shape(shape_name)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Custom shape "{shape_name}" deleted successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'Custom shape "{shape_name}" not found'
+            })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/clear_all_custom_shapes', methods=['POST'])
+def clear_all_custom_shapes():
+    """Clear all custom shapes."""
+    try:
+        from utils.shape_masks import clear_all_custom_shapes
+        count = clear_all_custom_shapes()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cleared {count} custom shapes',
+            'count': count
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
