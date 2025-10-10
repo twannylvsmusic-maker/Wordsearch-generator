@@ -229,7 +229,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Robert A. Van Dyke**
 - Email: ravandyke44@yahoo.com
 - LinkedIn: [linkedin.com/in/robert-van-dyke](https://linkedin.com/in/robert-van-dyke)
-- Portfolio: [twannylvsmusic-maker.github.io/Portfolio](https://twannylvsmusic-maker.github.io/Portfolio)
+- **Portfolio**: [twannylvsmusic-maker.github.io](https://twannylvsmusic-maker.github.io)
 
 ## 🙏 Acknowledgments
 
