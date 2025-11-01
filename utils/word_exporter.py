@@ -38,11 +38,11 @@ def export_to_word(title, subject, grid, word_list, font_name, filename, theme='
         section.page_height = Inches(9.0)  # 9" height
         
         if shape == 'square':
-            # Square shape: 1.5" header, 0.5" left, 0.75" right, 1.0" footer margins
+            # Square shape: reduced margins (50% decrease on left/right)
             section.top_margin = Inches(1.5)   # 1.5" top margin
             section.bottom_margin = Inches(1.0)  # 1.0" bottom margin
-            section.left_margin = Inches(0.5)   # 0.5" left margin
-            section.right_margin = Inches(0.75)  # 0.75" right margin
+            section.left_margin = Inches(0.25)   # 0.25" left margin (50% of 0.5")
+            section.right_margin = Inches(0.375)  # 0.375" right margin (50% of 0.75")
         else:
             # Non-square shapes: equal margins for maximum wordlist space
             section.top_margin = Inches(0.3)   # Minimal margins for better space utilization
@@ -53,13 +53,9 @@ def export_to_word(title, subject, grid, word_list, font_name, filename, theme='
     # Set document background to white by setting paragraph styles
     doc.styles['Normal'].font.color.rgb = RGBColor.from_string('000000')  # Black text
     
-    # Add title and subtitle centered on the page (not on puzzle grid)
+    # Add title and subtitle to the header (for all shapes)
     if title or subject:
-        add_title_and_subject_to_page(doc, title, subject, font_name, theme_colors)
-    
-    # Add space between title and main content
-    spacer_paragraph = doc.add_paragraph()
-    spacer_paragraph.paragraph_format.space_after = Pt(12)  # Space between title and grid
+        add_title_and_subject_to_header(doc, title, subject, font_name, theme_colors)
     
     # Create main table with wordlist, spacer, and puzzle
     if shape == 'square':
@@ -182,12 +178,15 @@ def remove_table_borders(cell):
     
     tcPr.append(borders)
 
-def add_title_and_subject_to_page(doc, title, subject, font_name, theme_colors):
-    """Add title and subject centered on the page."""
+def add_title_and_subject_to_header(doc, title, subject, font_name, theme_colors):
+    """Add title and subject centered in the header (for all shapes)."""
+    
+    # Get the header from the first section
+    header = doc.sections[0].header
     
     # Add title if provided
     if title:
-        title_paragraph = doc.add_paragraph()
+        title_paragraph = header.add_paragraph()
         title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         title_run = title_paragraph.add_run(title)
         title_run.font.name = font_name
@@ -198,7 +197,7 @@ def add_title_and_subject_to_page(doc, title, subject, font_name, theme_colors):
     
     # Add subject if provided
     if subject:
-        subject_paragraph = doc.add_paragraph()
+        subject_paragraph = header.add_paragraph()
         subject_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         subject_run = subject_paragraph.add_run(subject)
         subject_run.font.name = font_name
